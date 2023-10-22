@@ -1,0 +1,103 @@
+from typing import Annotated
+
+from fastapi import APIRouter, Depends
+
+from serv.api import schemas
+from serv.api.schemas import ClientShow, ClientCreate, ClientUpdate
+from serv.database.dals import ClientDAL
+from serv.database.session import AsyncSession, get_db_session
+from serv.shared import create_http_exception
+from fastapi.security import OAuth2PasswordRequestForm
+
+
+clients_router = APIRouter()
+
+
+@clients_router.post("/", response_model=ClientShow)
+async def create_client(
+    client: ClientCreate, session: Annotated[AsyncSession, Depends(get_db_session)]
+):
+    async with session.begin():
+        client_dal = ClientDAL(session)
+        old_client = await client_dal.get_client_by_email(client.email)
+        if old_client:
+            raise create_http_exception(
+                status_code=409,
+                reason="client with provided email already exists",
+                email=client.email,
+            )
+
+        new_client = await client_dal.create_client(
+            first_name=client.first_name,
+            middle_name=client.middle_name,
+            last_name=client.last_name,
+            phone=client.phone,
+            email=client.email,
+            hashed_password=client.password,
+        )
+
+        return new_client
+
+
+@clients_router.get("/", response_model=list[ClientShow])
+async def get_clients(
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    offset: int = 0,
+    limit: int = 10,
+):
+    async with session.begin():
+        client_dal = ClientDAL(session)
+        clients = await client_dal.get_clients(offset, limit)
+        return clients
+
+
+@clients_router.get("/{id}", response_model=ClientShow)
+async def get_client(
+    id: int, session: Annotated[AsyncSession, Depends(get_db_session)]
+):
+    async with session.begin():
+        client_dal = ClientDAL(session)
+        client = await client_dal.get_client_by_id(id, include_his_room_orders=True)
+
+        if client is None:
+            raise create_http_exception(
+                status_code=404, reason="client with provided id does not exist", id=id
+            )
+
+        return client
+
+
+@clients_router.put("/{id}")
+async def update_client(
+    id: int,
+    updated_client: ClientUpdate,
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+):
+    async with session.begin():
+        client_dal = ClientDAL(session)
+        updated_client_id = await client_dal.update_client(
+            id, **updated_client.dict(exclude_unset=True)
+        )
+
+        return {"id": updated_client_id}
+
+
+@clients_router.delete("/{id}")
+async def delete_client(id: int, session: Annotated[AsyncSession, Depends(get_db_session)]):
+
+    async with session.begin():
+        clients_dal = ClientDAL(session)
+
+        room = await clients_dal.get_client_by_id(id)
+        if room is None:
+            raise create_http_exception(
+                status_code=404, reason="client with provided id does not exist", id=id
+            )
+        deleted_clients_id = await clients_dal.delete_client(id)
+        return {deleted_clients_id: "is deleted"}
+
+
+
+
+
+
