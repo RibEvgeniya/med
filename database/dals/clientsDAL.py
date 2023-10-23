@@ -2,20 +2,14 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from serv.database.models import Client
-import hashlib
-import random
-import string
-from datetime import datetime, timedelta
-from sqlalchemy import and_
-
-
+from database.models import Client
 
 
 class ClientDAL:
+    """Data Access Layer for operating clients info"""
+
     def __init__(self, session: AsyncSession):
         self.session = session
-
 
     async def create_client(
         self,
@@ -25,7 +19,8 @@ class ClientDAL:
         phone: str,
         email: str,
         hashed_password: str,
-        birth_date: datetime.date()
+        room_id: int | None = None,
+        is_active: bool = True,
     ) -> Client:
         new_client = Client(
             first_name=first_name,
@@ -34,7 +29,8 @@ class ClientDAL:
             phone=phone,
             email=email,
             hashed_password=hashed_password,
-            birth_date=birth_date
+            room_id=room_id,
+            is_active=is_active,
         )
         self.session.add(new_client)
         await self.session.flush()
@@ -56,8 +52,8 @@ class ClientDAL:
     ) -> Client | None:
         query = select(Client).where(Client.id == client_id)
 
-        ##if include_his_room_orders:
-        ##    query.options(joinedload(Client.room_orders))
+        if include_his_room_orders:
+            query.options(joinedload(Client.room_orders))
 
         res = await self.session.execute(query)
         client = res.scalar_one_or_none()
@@ -97,17 +93,3 @@ class ClientDAL:
         res = await self.session.execute(query)
         updated_client_id = res.scalar_one_or_none()
         return updated_client_id
-
-    ##async def get_clients_bookings(
-     ##   self, client_id: int, offset: int = 0, limit: int = 0
-    ##) -> list[Booking]:
-     ##   query = (
-     ##       select(Booking)
-     ##       .where(Booking.client_id == client_id)
-      ##      .offset(offset)
-      ##      .limit(limit)
-     ##   )
-
-     ##   res = await self.session.execute(query)
-     ##   his_bookings = res.scalar_one_or_none()
-     ##   return list(his_bookings)

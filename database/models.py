@@ -26,7 +26,7 @@ class Client(Base):
         sa.String(length=1024), nullable=False
     )
     is_active: so.Mapped[bool] = so.mapped_column(nullable=False)
-    birth_date: so.Mapped[datetime.date]=so.mapped_column( nullable=False)
+    ##birth_date: so.Mapped[datetime.date]=so.mapped_column( nullable=False)
 
 ##class Tokens(Base):
  ##   __tablename__="tokens"

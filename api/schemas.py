@@ -19,7 +19,7 @@ class ClientBase(BaseModel):
     last_name: str
     phone: str
     email: EmailStr
-    birth_date: datetime.date  ## !!!!????
+    ##birth_date: datetime.date  ## !!!!????
 
 
 class ClientCreate(ClientBase):

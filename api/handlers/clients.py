@@ -2,11 +2,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from serv.api import schemas
-from serv.api.schemas import ClientShow, ClientCreate, ClientUpdate
-from serv.database.dals import ClientDAL
-from serv.database.session import AsyncSession, get_db_session
-from serv.shared import create_http_exception
+from api import schemas
+from api.schemas import ClientShow, ClientCreate, ClientUpdate
+from database.dals import ClientDAL
+from database.session import AsyncSession, get_db_session
+from shared import create_http_exception
 from fastapi.security import OAuth2PasswordRequestForm
 
 
